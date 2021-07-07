@@ -7,6 +7,9 @@ ARG musl_version=1.2.2
 ARG bash_version=5.0
 ARG bash_patch_level=18
 
+WORKDIR /opt/bin
+COPY ./aws-ec2-instance-connect-config/bin ./
+
 WORKDIR /opt/build
 COPY ./sdk-fetch ./
 
@@ -67,6 +70,7 @@ RUN chmod +x /usr/sbin/start_admin_sshd.sh
 RUN chmod +x /usr/bin/sheltie
 RUN groupadd -g 274 api
 RUN useradd -m -G users,api ec2-user
+RUN useradd -r -s /bin/false ec2-instance-connect
 
 CMD ["/usr/sbin/start_admin_sshd.sh"]
 ENTRYPOINT ["/bin/bash", "-c"]
