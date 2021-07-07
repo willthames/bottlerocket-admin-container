@@ -23,7 +23,7 @@ jobs:
           name: "Build docker image"
           command: |
             set -eu
-            docker build -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} .
+            IMAGE_NAME=${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} make
       - deploy:
           name: "Upload container to registry"
           command: |
