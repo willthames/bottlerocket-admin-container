@@ -8,9 +8,6 @@ jobs:
       - image: circleci/python:3.8.2
     steps:
       - checkout
-      - run:
-          name: Initialize submodule
-          command: git submodule init
       - setup_remote_docker:
           docker_layer_caching: true
           version: 18.09.3
