@@ -5,31 +5,30 @@ orbs:
 jobs:
   deploy:
     docker:
-      - image: circleci/python:3.8.2
+      - image: cimg/python:3.8.2
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.09.3
+          version: 19.03.14
       - aws-cli/install
       - run:
           name: "Login to ECR"
           command: |
             set -eu
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
-      - run:
-          name: "Build docker image"
-          command: |
-            set -eu
-            IMAGE_NAME=${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} make
       - deploy:
           name: "Upload container to registry"
           command: |
             set -eu
             VTAG="$(git describe --tags)"
-            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1}
-            docker tag ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG}
-            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG}
+            export DOCKER_CLI_EXPERIMENTAL=enabled
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+            docker context create multi-arch-build
+            docker buildx create --use multi-arch-build
+            docker buildx build --push --platform linux/arm64/v8,linux/amd64 \
+                    -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} \
+                    -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG} .
 
 workflows:
   version: 2
