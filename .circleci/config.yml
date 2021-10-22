@@ -3,14 +3,12 @@ orbs:
   aws-cli: circleci/aws-cli@0.1.13
 
 jobs:
-  deploy:
-    docker:
-      - image: cimg/python:3.8.2
+  build-x86:
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-          version: 19.03.14
       - aws-cli/install
       - run:
           name: "Login to ECR"
@@ -18,21 +16,66 @@ jobs:
             set -eu
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
       - deploy:
-          name: "Upload container to registry"
+          name: "Upload x86 image to registry"
+          command: |
+            docker build -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1} .
+            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
+
+  build-arm:
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+    steps:
+      - checkout
+      - aws-cli/install
+      - run:
+          name: "Login to ECR"
+          command: |
+            set -eu
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
+      - deploy:
+          name: "Upload arm image to registry"
+          command: |
+            docker build -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} .
+            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1}
+
+  upload-manifest:
+    docker:
+      - image: cimg/python:3.8.2
+    steps:
+      - checkout
+      - aws-cli/install
+      - run:
+          name: "Login to ECR"
+          command: |
+            set -eu
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
+      - deploy:
+          name: "Upload manifest to registry"
           command: |
             set -eu
             VTAG="$(git describe --tags)"
             export DOCKER_CLI_EXPERIMENTAL=enabled
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-            docker context create multi-arch-build
-            docker buildx create --use multi-arch-build
-            docker buildx build --push --platform linux/arm64/v8,linux/amd64 \
-                    -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} \
-                    -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG} .
+            docker manifest create ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} \
+                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} \
+                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
+            docker manifest push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1}
+
+            docker manifest create ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG} \
+                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} \
+                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
+            docker manifest push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG}
 
 workflows:
   version: 2
   deploy:
     jobs:
-      - deploy:
+      - build-arm:
           context: aws-ecr
+      - build-x86:
+          context: aws-ecr
+      - upload-manifest:
+          context: aws-ecr
+          requires:
+            - build-arm
+            - build-x86
