@@ -40,11 +40,6 @@ RUN mkdir -p /usr/share/licenses/bash && \
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
-ARG IMAGE_VERSION
-# Make the container image version a mandatory build argument
-RUN test -n "$IMAGE_VERSION"
-LABEL "org.opencontainers.image.version"="$IMAGE_VERSION"
-
 RUN yum update -y \
     && yum install -y openssh-server sudo shadow-utils util-linux procps-ng jq openssl ec2-instance-connect \
     && yum clean all

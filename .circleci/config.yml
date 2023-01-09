@@ -1,81 +1,55 @@
 version: 2.1
 orbs:
-  aws-cli: circleci/aws-cli@0.1.13
+  skedulo: skedulo/ci@0.5.5
 
-jobs:
-  build-x86:
-    machine:
-      image: ubuntu-2004:202101-01
-    resource_class: arm.medium
-    steps:
-      - checkout
-      - aws-cli/install
-      - run:
-          name: "Login to ECR"
-          command: |
-            set -eu
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
-      - deploy:
-          name: "Upload x86 image to registry"
-          command: |
-            docker build -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1} .
-            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
-
-  build-arm:
-    machine:
-      image: ubuntu-2004:202101-01
-    resource_class: arm.medium
-    steps:
-      - checkout
-      - aws-cli/install
-      - run:
-          name: "Login to ECR"
-          command: |
-            set -eu
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
-      - deploy:
-          name: "Upload arm image to registry"
-          command: |
-            docker build -t ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} .
-            docker push ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1}
-
-  upload-manifest:
-    docker:
-      - image: cimg/python:3.8.2
-    steps:
-      - checkout
-      - aws-cli/install
-      - run:
-          name: "Login to ECR"
-          command: |
-            set -eu
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ECR_ACCOUNT_URL
-      - deploy:
-          name: "Upload manifest to registry"
-          command: |
-            set -eu
-            VTAG="$(git describe --tags)"
-            export DOCKER_CLI_EXPERIMENTAL=enabled
-            docker manifest create ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1} \
-                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} \
-                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
-            docker manifest push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${CIRCLE_SHA1}
-
-            docker manifest create ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG} \
-                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:arm64-${CIRCLE_SHA1} \
-                                   ${DOCKER_REGISTRY}/${DOCKER_REPO}:x86_64-${CIRCLE_SHA1}
-            docker manifest push ${DOCKER_REGISTRY}/${DOCKER_REPO}:${VTAG}
+parameters:
+  image:
+    default: skedulo/bottlerocket-admin-container
+    type: string
 
 workflows:
-  version: 2
-  deploy:
+  everything:
     jobs:
-      - build-arm:
+      - skedulo/build_and_push_image:
+          name: build_image_<<matrix.executor>>
+          context:
+            - aws-ecr
+            - prisma
+          matrix:
+            parameters:
+              executor:
+                - skedulo/amd64
+                - skedulo/arm64
+          image: <<pipeline.parameters.image>>
+          push: false
+          use_buildkit: true
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - skedulo/build_and_push_image:
+          name: build_and_push_image_<<matrix.executor>>
+          context:
+            - aws-ecr
+            - prisma
+          matrix:
+            alias: build_and_push_image
+            parameters:
+              executor:
+                - skedulo/amd64
+                - skedulo/arm64
+          image: <<pipeline.parameters.image>>
+          use_buildkit: true
+          filters:
+            branches:
+              only:
+                - main
+
+      - skedulo/create_and_push_manifest:
+          name: create_and_push_manifest
           context: aws-ecr
-      - build-x86:
-          context: aws-ecr
-      - upload-manifest:
-          context: aws-ecr
+          images: <<pipeline.parameters.image>>:${VERSION_TAG}-amd64,<<pipeline.parameters.image>>:${VERSION_TAG}-arm64
+          manifest: <<pipeline.parameters.image>>
           requires:
-            - build-arm
-            - build-x86
+            - build_and_push_image
