@@ -42,6 +42,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
 RUN yum update -y \
     && yum install -y openssh-server sudo shadow-utils util-linux procps-ng jq openssl ec2-instance-connect \
+           tcpdump curl nmap-ncat iproute bind-utils which traceroute iputils strace net-tools ethtool \
     && yum clean all
 # Delete SELinux config file to prevent relabeling with contexts provided by the container's image
 RUN rm -rf /etc/selinux/config
