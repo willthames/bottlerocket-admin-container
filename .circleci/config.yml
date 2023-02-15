@@ -26,7 +26,7 @@ workflows:
           filters:
             branches:
               ignore:
-                - main
+                - skedulo-only
 
       - skedulo/build_and_push_image:
           name: build_and_push_image_<<matrix.executor>>
@@ -44,7 +44,7 @@ workflows:
           filters:
             branches:
               only:
-                - main
+                - skedulo-only
 
       - skedulo/create_and_push_manifest:
           name: create_and_push_manifest
