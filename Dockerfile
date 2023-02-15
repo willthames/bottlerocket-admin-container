@@ -88,6 +88,7 @@ RUN rpmbuild --bb systemd.spec
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 
+<<<<<<< HEAD
 ARG IMAGE_VERSION
 # Make the container image version a mandatory build argument
 RUN test -n "$IMAGE_VERSION"
@@ -110,6 +111,17 @@ RUN --mount=type=bind,from=builder-systemd,source=/home/builder/rpmbuild/RPMS,ta
         shadow-utils \
         sudo \
         util-linux \
+        tcpdump \
+        curl \
+        nmap-ncat \
+        iproute \
+        bind-utils \
+        which \
+        traceroute \
+        iputils \
+        strace \
+        net-tools \
+        ethtool \
     && yum clean all
 
 # Delete SELinux config file to prevent relabeling with contexts provided by the container's image
