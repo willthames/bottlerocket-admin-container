@@ -23,6 +23,7 @@ workflows:
           image: <<pipeline.parameters.image>>
           push: false
           use_buildkit: true
+          extra_build_args: "--build-arg IMAGE_VERSION=${VERSION_TAG}"
           filters:
             branches:
               ignore:
@@ -41,6 +42,7 @@ workflows:
                 - skedulo/arm64
           image: <<pipeline.parameters.image>>
           use_buildkit: true
+          extra_build_args: "--build-arg IMAGE_VERSION=${VERSION_TAG}"
           filters:
             branches:
               only:
