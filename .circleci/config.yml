@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  skedulo: skedulo/ci@1.0.0
+  skedulo: skedulo/ci@2
 
 parameters:
   image:
@@ -14,7 +14,7 @@ workflows:
           name: build_image_<<matrix.executor>>
           context:
             - aws-ecr
-            - prisma
+            - wiz
           matrix:
             parameters:
               executor:
@@ -33,7 +33,7 @@ workflows:
           name: build_and_push_image_<<matrix.executor>>
           context:
             - aws-ecr
-            - prisma
+            - wiz
           matrix:
             alias: build_and_push_image
             parameters:

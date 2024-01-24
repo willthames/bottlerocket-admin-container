@@ -1,0 +1,5 @@
+# Code Owners file for Skedulo Infrastructure
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners for more info
+
+# These owners will be the default owners for everything in the repo, and therefore will be included on All PR's unless otherwise specified in this file
+*       @Skedulo/infrastructure
