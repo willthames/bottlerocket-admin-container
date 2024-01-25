@@ -122,6 +122,9 @@ RUN --mount=type=bind,from=builder-systemd,source=/home/builder/rpmbuild/RPMS,ta
         strace \
         net-tools \
         ethtool \
+        iptables \
+        lsof \
+        conntrack \
     && yum clean all
 
 # Delete SELinux config file to prevent relabeling with contexts provided by the container's image
