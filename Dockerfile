@@ -126,6 +126,7 @@ RUN --mount=type=bind,from=builder-systemd,source=/home/builder/rpmbuild/RPMS,ta
         lsof \
         conntrack \
         bpftrace \
+        perf \
     && yum clean all
 
 # Delete SELinux config file to prevent relabeling with contexts provided by the container's image
@@ -147,6 +148,10 @@ RUN echo "PS1='$CUSTOM_PS1'" > "/etc/profile.d/bottlerocket-ps1.sh" \
 COPY --chmod=755 start_admin.sh /usr/sbin/
 COPY ./sshd_config /etc/ssh/
 COPY --chmod=755 ./sheltie /usr/bin/
+
+RUN mkdir /usr/share/flamegrapher && \
+    curl -L https://github.com/brendangregg/FlameGraph/archive/refs/heads/master.tar.gz | \
+    tar xzf - --strip-components 1 -C /usr/share/flamegrapher
 
 RUN groupadd -g 274 api
 
