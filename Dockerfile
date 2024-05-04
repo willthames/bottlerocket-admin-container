@@ -76,6 +76,7 @@ RUN last_patch=$(awk '/^Patch[0-9]+/ { line = NR } END { print line }' systemd.s
         echo 'Patch9501: 9501-cgroup-util-accept-cgroup-hierarchy-base-as-option.patch'; \
         echo 'Patch9502: 9502-core-move-initialization-of-.slice-and-init.scope-in.patch'; \
         echo 'Patch9503: 9503-core-drop-.slice-from-shipped-units.patch'; \
+        echo 'Patch9504: 9504-core-skip-restart-when-a-JOB_STOP-job-is-pending.patch'; \
         echo ; \
     } >>systemd.mod.spec; \
     tail -n+$((last_patch + 1)) systemd.spec >>systemd.mod.spec; \
