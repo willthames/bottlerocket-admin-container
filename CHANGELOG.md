@@ -1,3 +1,10 @@
+# 0.11.8
+
+* Added systemd skip automatic restart when a JOB_STOP job is pending patch. ([#97])
+* Rebuilt to get the latest AL2 updates.
+
+[#97]: https://github.com/bottlerocket-os/bottlerocket-admin-container/pull/97
+
 # 0.11.7
 
 * Rebuilt to get the latest AL2 updates.
