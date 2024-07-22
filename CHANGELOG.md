@@ -1,3 +1,7 @@
+# 0.11.9
+
+* Rebuilt to get the latest AL2 updates.
+
 # 0.11.8
 
 * Added systemd skip automatic restart when a JOB_STOP job is pending patch. ([#97])
