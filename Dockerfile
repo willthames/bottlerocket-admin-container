@@ -153,6 +153,10 @@ RUN mkdir /usr/share/flamegrapher && \
     curl -L https://github.com/brendangregg/FlameGraph/archive/refs/heads/master.tar.gz | \
     tar xzf - --strip-components 1 -C /usr/share/flamegrapher
 
+RUN mkdir -p /usr/share/async-profiler && \
+    curl -L https://github.com/async-profiler/async-profiler/releases/download/v3.0/async-profiler-3.0-linux-x64.tar.gz | \
+    tar xzf - --strip-components 1 -C /usr/share/async-profiler
+
 RUN groupadd -g 274 api
 
 # Reduces issues related to logger and our implementation of systemd. This is
